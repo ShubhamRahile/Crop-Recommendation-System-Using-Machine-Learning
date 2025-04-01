@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FarmAI - Crop Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2E7D32;
+            --accent-color: #8BC34A;
+            --dark-color: #1B5E20;
+            --light-color: #f8f9fa;
+            --text-color: #333;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4efe9 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background: var(--dark-color) !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .navbar-brand i {
+            color: var(--accent-color);
+        }
+        
+        h1, h2, h3, h4 {
+            color: var(--dark-color);
+            font-weight: 700;
+        }
+        
+        .card-header h3 {
+            color: white !important;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+            margin-bottom: 50px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--dark-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            font-weight: 600;
+            border-bottom: none;
+        }
+        
+        .form-control {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 15px;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 12px 25px;
+            font-weight: 600;
+        }
+        
+        .stage-card {
+            border-left: 4px solid var(--accent-color);
+            transition: all 0.3s;
+        }
+        
+        .stage-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        #previewImage {
+            max-height: 200px;
+            display: none;
+            margin-top: 15px;
+            border-radius: 8px;
+        }
+        
+        .treatment-card {
+            border-left: 4px solid #2196F3;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-leaf"></i>
+                FarmAI
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home me-1"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/chatboot">
+                            <i class="fas fa-robot me-1"></i> AI Assistant
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/weather">
+                            <i class="fas fa-cloud-sun me-1"></i> Weather
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/market">
+                            <i class="fas fa-chart-line me-1"></i> Market
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/crop">
+                            <i class="fas fa-seedling me-1"></i> Crop Tools
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <span class="navbar-text">
+                        <i class="fas fa-sun me-1"></i> Smart Farming Solutions
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="text-center mb-5">
+            <h1><i class="fas fa-seedling"></i> Crop Management Tools</h1>
+            <p class="lead">Track growth stages, identify pests/diseases, and get treatment recommendations</p>
+        </div>
+        
+        <!-- Growth Stage Tracking -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-calendar-alt"></i> Growth Stage Tracking</h3>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="crop-select" class="form-label">Select Crop</label>
+                        <select class="form-select" id="crop-select">
+                            <option value="">Choose a crop...</option>
+                            <option value="wheat">Wheat</option>
+                            <option value="rice">Rice</option>
+                            <option value="corn">Corn</option>
+                            <option value="soybean">Soybean</option>
+                            <optgroup label="Cereals">
+                                <option value="wheat">Wheat</option>
+                                <option value="rice">Rice</option>
+                                <option value="corn">Corn (Maize)</option>
+                                <option value="barley">Barley</option>
+                                <option value="oats">Oats</option>
+                                <option value="millet">Millet</option>
+                                <option value="sorghum">Sorghum</option>
+                            </optgroup>
+                            
+                            <!-- Pulses -->
+                            <optgroup label="Pulses">
+                                <option value="soybean">Soybean</option>
+                                <option value="chickpea">Chickpea</option>
+                                <option value="lentil">Lentil</option>
+                                <option value="blackgram">Blackgram</option>
+                                <option value="greengram">Greengram</option>
+                                <option value="pigeonpea">Pigeonpea</option>
+                            </optgroup>
+                            
+                            <!-- Vegetables -->
+                            <optgroup label="Vegetables">
+                                <option value="potato">Potato</option>
+                                <option value="tomato">Tomato</option>
+                                <option value="onion">Onion</option>
+                                <option value="brinjal">Brinjal (Eggplant)</option>
+                                <option value="chilli">Chilli</option>
+                                <option value="okra">Okra (Ladyfinger)</option>
+                                <option value="cucumber">Cucumber</option>
+                            </optgroup>
+                            
+                            <!-- Fruits -->
+                            <optgroup label="Fruits">
+                                <option value="banana">Banana</option>
+                                <option value="mango">Mango</option>
+                                <option value="citrus">Citrus</option>
+                                <option value="apple">Apple</option>
+                                <option value="grapes">Grapes</option>
+                            </optgroup>
+                            
+                            <!-- Cash Crops -->
+                            <optgroup label="Cash Crops">
+                                <option value="cotton">Cotton</option>
+                                <option value="sugarcane">Sugarcane</option>
+                                <option value="tobacco">Tobacco</option>
+                                <option value="coffee">Coffee</option>
+                                <option value="tea">Tea</option>
+                            </optgroup>
+                            
+                            <!-- Oilseeds -->
+                            <optgroup label="Oilseeds">
+                                <option value="mustard">Mustard</option>
+                                <option value="sunflower">Sunflower</option>
+                                <option value="groundnut">Groundnut</option>
+                                <option value="sesame">Sesame</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="planting-date" class="form-label">Planting Date</label>
+                        <input type="date" class="form-control" id="planting-date">
+                    </div>
+                </div>
+                
+                <div id="growth-stages" class="row g-3">
+                    <!-- Stages will be loaded here -->
+                    <div class="col-12 text-center text-muted py-4">
+                        <i class="fas fa-info-circle fa-2x mb-3"></i>
+                        <p>Select a crop and planting date to view growth stages</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pest/Disease Identification -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-bug"></i> Pest/Disease Identification</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="image-upload" class="form-label">Upload Image</label>
+                        <input type="file" class="form-control" id="image-upload" accept="image/*">
+                        <img id="previewImage" class="img-fluid" alt="Preview">
+                        <button class="btn btn-primary mt-3" onclick="analyzeImage()">
+                            <i class="fas fa-search me-2"></i> Analyze Image
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <div id="pest-results">
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-camera fa-2x mb-3"></i>
+                                <p>Upload an image of your crop to identify pests or diseases</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Treatment Recommendations -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-medkit"></i> Treatment Recommendations</h3>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="issue-select" class="form-label">Select Issue</label>
+                        <select class="form-select" id="issue-select">
+                            <option value="">Choose an issue...</option>
+                            <option value="aphids">Aphids</option>
+                            <option value="fungus">Fungal Infection</option>
+                            <option value="blight">Early Blight</option>
+                            <option value="borer">Stem Borer</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="crop-treatment" class="form-label">Crop Affected</label>
+                        <select class="form-select" id="crop-treatment">
+                            <option value="">Choose a crop...</option>
+                            <option value="wheat">Wheat</option>
+                            <option value="rice">Rice</option>
+                            <option value="corn">Corn</option>
+                            <option value="soybean">Soybean</option>
+                            <optgroup label="Cereals">
+                                <option value="wheat">Wheat</option>
+                                <option value="rice">Rice</option>
+                                <option value="corn">Corn (Maize)</option>
+                                <option value="barley">Barley</option>
+                                <option value="oats">Oats</option>
+                                <option value="millet">Millet</option>
+                                <option value="sorghum">Sorghum</option>
+                            </optgroup>
+                            
+                            <!-- Pulses -->
+                            <optgroup label="Pulses">
+                                <option value="soybean">Soybean</option>
+                                <option value="chickpea">Chickpea</option>
+                                <option value="lentil">Lentil</option>
+                                <option value="blackgram">Blackgram</option>
+                                <option value="greengram">Greengram</option>
+                                <option value="pigeonpea">Pigeonpea</option>
+                            </optgroup>
+                            
+                            <!-- Vegetables -->
+                            <optgroup label="Vegetables">
+                                <option value="potato">Potato</option>
+                                <option value="tomato">Tomato</option>
+                                <option value="onion">Onion</option>
+                                <option value="brinjal">Brinjal (Eggplant)</option>
+                                <option value="chilli">Chilli</option>
+                                <option value="okra">Okra (Ladyfinger)</option>
+                                <option value="cucumber">Cucumber</option>
+                            </optgroup>
+                            
+                            <!-- Fruits -->
+                            <optgroup label="Fruits">
+                                <option value="banana">Banana</option>
+                                <option value="mango">Mango</option>
+                                <option value="citrus">Citrus</option>
+                                <option value="apple">Apple</option>
+                                <option value="grapes">Grapes</option>
+                            </optgroup>
+                            
+                            <!-- Cash Crops -->
+                            <optgroup label="Cash Crops">
+                                <option value="cotton">Cotton</option>
+                                <option value="sugarcane">Sugarcane</option>
+                                <option value="tobacco">Tobacco</option>
+                                <option value="coffee">Coffee</option>
+                                <option value="tea">Tea</option>
+                            </optgroup>
+                            
+                            <!-- Oilseeds -->
+                            <optgroup label="Oilseeds">
+                                <option value="mustard">Mustard</option>
+                                <option value="sunflower">Sunflower</option>
+                                <option value="groundnut">Groundnut</option>
+                                <option value="sesame">Sesame</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary mb-4" onclick="getTreatments()">
+                    <i class="fas fa-search me-2"></i> Get Recommendations
+                </button>
+                
+                <div id="treatment-results">
+                    <!-- Results will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Growth stage data
+        const growthStages = {
+            wheat: [
+                { name: "Germination", days: 7, description: "Seed absorbs water and begins to sprout" },
+                { name: "Tillering", days: 30, description: "Plant develops side shoots" },
+                { name: "Stem Extension", days: 60, description: "Main stem grows rapidly" },
+                { name: "Heading", days: 90, description: "Head emerges from the sheath" },
+                { name: "Ripening", days: 120, description: "Grain develops and matures" }
+            ],
+            rice: [
+                { name: "Germination", days: 5, description: "Seed sprouts in flooded fields" },
+                { name: "Seedling", days: 25, description: "Young plants grow leaves" },
+                { name: "Tillering", days: 55, description: "Multiple stems develop" },
+                { name: "Panicle Initiation", days: 85, description: "Flowering structures form" },
+                { name: "Maturity", days: 115, description: "Grains harden and dry" }
+            ],
+            corn: [
+                { name: "Emergence", days: 10, description: "Seedlings break through soil" },
+                { name: "Vegetative", days: 35, description: "Leaves and stalks develop" },
+                { name: "Tasseling", days: 65, description: "Male flowers appear" },
+                { name: "Silking", days: 70, description: "Female flowers emerge" },
+                { name: "Maturity", days: 100, description: "Kernels dry and harden" }
+            ],
+            soybean: [
+                { name: "Emergence", days: 7, description: "Cotyledons appear above soil" },
+                { name: "Vegetative", days: 30, description: "Leaves and stems develop" },
+                { name: "Flowering", days: 60, description: "Plants produce flowers" },
+                { name: "Pod Development", days: 85, description: "Pods form and fill" },
+                { name: "Maturity", days: 110, description: "Leaves yellow and drop" }
+            ]
+        };
+
+        // Treatment data
+        const treatments = {
+            aphids: {
+                name: "Aphids",
+                description: "Small sap-sucking insects that weaken plants",
+                organic: "Spray with neem oil or insecticidal soap",
+                chemical: "Apply imidacloprid or pyrethrin-based insecticides",
+                prevention: "Encourage ladybugs and lacewings (natural predators)"
+            },
+            fungus: {
+                name: "Fungal Infection",
+                description: "Various fungal diseases affecting leaves and stems",
+                organic: "Apply copper fungicide or baking soda solution",
+                chemical: "Use chlorothalonil or mancozeb fungicides",
+                prevention: "Ensure proper spacing and air circulation"
+            },
+            blight: {
+                name: "Early Blight",
+                description: "Fungal disease causing leaf spots and defoliation",
+                organic: "Apply compost tea or potassium bicarbonate",
+                chemical: "Use chlorothalonil or copper fungicides",
+                prevention: "Rotate crops and remove infected plant debris"
+            },
+            borer: {
+                name: "Stem Borer",
+                description: "Larvae that tunnel into stems causing wilting",
+                organic: "Apply neem oil or Bacillus thuringiensis (Bt)",
+                chemical: "Use carbaryl or permethrin insecticides",
+                prevention: "Remove and destroy infected plants"
+            }
+        };
+
+        // Initialize image upload preview
+        document.getElementById('image-upload').addEventListener('change', function(e) {
+            const preview = document.getElementById('previewImage');
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            
+            if (file) {
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Track crop growth stages
+        document.getElementById('crop-select').addEventListener('change', function() {
+            updateGrowthCalendar();
+        });
+
+        document.getElementById('planting-date').addEventListener('change', function() {
+            updateGrowthCalendar();
+        });
+
+        function updateGrowthCalendar() {
+            const crop = document.getElementById('crop-select').value;
+            const plantingDate = document.getElementById('planting-date').value;
+            const stagesContainer = document.getElementById('growth-stages');
+            
+            if (!crop || !plantingDate) {
+                stagesContainer.innerHTML = `
+                    <div class="col-12 text-center text-muted py-4">
+                        <i class="fas fa-info-circle fa-2x mb-3"></i>
+                        <p>Select a crop and planting date to view growth stages</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const stages = growthStages[crop] || [];
+            const plantDate = new Date(plantingDate);
+            
+            let html = '';
+            stages.forEach(stage => {
+                const stageDate = new Date(plantDate);
+                stageDate.setDate(stageDate.getDate() + stage.days);
+                
+                html += `
+                    <div class="col-md-6">
+                        <div class="card stage-card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">${stage.name}</h5>
+                                <p class="card-text">${stage.description}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">~${stage.days} days after planting</small>
+                                    <strong>${stageDate.toDateString()}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            stagesContainer.innerHTML = html;
+        }
+
+        // Analyze uploaded image (simulated)
+        function analyzeImage() {
+            const preview = document.getElementById('previewImage');
+            const resultsContainer = document.getElementById('pest-results');
+            
+            if (!preview.src || preview.style.display === 'none') {
+                alert("Please upload an image first");
+                return;
+            }
+            
+            // Show loading
+            resultsContainer.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Analyzing image for pests and diseases...</p>
+                </div>
+            `;
+            
+            // Simulate API call with timeout
+            setTimeout(() => {
+                // Mock results - in a real app this would come from an ML model API
+                const mockResults = [
+                    { name: "Aphids", confidence: "85%", image: "aphids.jpg" },
+                    { name: "Powdery Mildew", confidence: "72%", image: "mildew.jpg" }
+                ];
+                
+                let html = '<h4>Detection Results</h4>';
+                mockResults.forEach(result => {
+                    html += `
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex">
+                                    <img src="https://via.placeholder.com/100?text=${result.name.replace(' ', '+')}" 
+                                         class="rounded me-3" width="100" alt="${result.name}">
+                                    <div>
+                                        <h5>${result.name}</h5>
+                                        <p>Confidence: <span class="badge bg-primary">${result.confidence}</span></p>
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                onclick="showTreatment('${result.name.toLowerCase().replace(' ', '-')}')">
+                                            View Treatment
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                resultsContainer.innerHTML = html;
+            }, 2000);
+        }
+
+        // Get treatment recommendations
+        function getTreatments() {
+            const issue = document.getElementById('issue-select').value;
+            const crop = document.getElementById('crop-treatment').value;
+            const container = document.getElementById('treatment-results');
+            
+            if (!issue || !crop) {
+                alert("Please select both an issue and crop");
+                return;
+            }
+            
+            const treatment = treatments[issue];
+            if (!treatment) {
+                container.innerHTML = '<div class="alert alert-warning">No treatment data available for this issue</div>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="card treatment-card">
+                    <div class="card-body">
+                        <h4>${treatment.name} Treatment for ${crop}</h4>
+                        <p class="text-muted">${treatment.description}</p>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-header bg-success text-white">
+                                        <i class="fas fa-leaf me-2"></i> Organic Treatment
+                                    </div>
+                                    <div class="card-body">
+                                        <p>${treatment.organic}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-header bg-primary text-white">
+                                        <i class="fas fa-flask me-2"></i> Chemical Treatment
+                                    </div>
+                                    <div class="card-body">
+                                        <p>${treatment.chemical}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-header bg-info text-white">
+                                        <i class="fas fa-shield-alt me-2"></i> Prevention
+                                    </div>
+                                    <div class="card-body">
+                                        <p>${treatment.prevention}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show treatment from pest detection
+        function showTreatment(issueId) {
+            document.getElementById('issue-select').value = issueId;
+            getTreatments();
+            
+            // Scroll to treatment section
+            document.querySelector('.card-header h3').scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+    </script>
+
+<script>
+    // Function to set current date
+    function useCurrentDate() {
+        const today = new Date();
+        const formattedDate = today.toISOString().substr(0, 10);
+        document.getElementById('planting-date').value = formattedDate;
+        updateGrowthCalendar();
+    }
+
+    // Update growth calendar when selections change
+    document.getElementById('crop-select').addEventListener('change', updateGrowthCalendar);
+    document.getElementById('planting-date').addEventListener('change', updateGrowthCalendar);
+
+    function updateGrowthCalendar() {
+        const crop = document.getElementById('crop-select').value;
+        const plantingDate = document.getElementById('planting-date').value;
+        const stagesContainer = document.getElementById('growth-stages');
+        
+        if (!crop || !plantingDate) {
+            stagesContainer.innerHTML = `
+                <div class="col-12 text-center text-muted py-4">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                    <p>Select a crop and planting date to view growth stages</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Get stages for selected crop (you would expand this data)
+        const stages = growthStages[crop] || getDefaultStages(crop);
+        const plantDate = new Date(plantingDate);
+        
+        let html = '';
+        stages.forEach(stage => {
+            const stageDate = new Date(plantDate);
+            stageDate.setDate(stageDate.getDate() + stage.days);
+            
+            html += `
+                <div class="col-md-6 col-lg-4">
+                    <div class="card stage-card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">${stage.name}</h5>
+                            <p class="card-text text-muted">${stage.description}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Day ${stage.days}</small>
+                                <strong class="text-primary">${stageDate.toDateString()}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        stagesContainer.innerHTML = html;
+    }
+
+    // Sample function to generate default stages for new crops
+    function getDefaultStages(crop) {
+        return [
+            { name: "Germination", days: 7, description: "Seed sprouts and establishes" },
+            { name: "Vegetative", days: 30, description: "Leaves and stems develop" },
+            { name: "Flowering", days: 60, description: "Plants produce flowers" },
+            { name: "Fruiting", days: 90, description: "Fruits/grains develop" },
+            { name: "Maturity", days: 120, description: "Ready for harvest" }
+        ];
+    }
+</script>
+</body>
+</html>

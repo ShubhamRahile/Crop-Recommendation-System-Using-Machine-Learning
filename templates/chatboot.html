@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FarmAI Assistant | Crop Recommendation System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: #2E7D32;
+            --light-green: #4CAF50;
+            --lighter-green: #8BC34A;
+            --bg-green: #e8f5e9;
+            --dark-green: #1B5E20;
+            --text-dark: #263238;
+            --text-light: #f5f5f5;
+        }
+        
+        body {
+            background: linear-gradient(to bottom right, #f1f8e9, #e8f5e9);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            color: var(--text-dark);
+        }
+
+        .navbar {
+            background: var(--dark-green) !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .navbar-brand i {
+            color: var(--lighter-green);
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(46, 125, 50, 0.2);
+            overflow: hidden;
+            border: none;
+            margin: 30px auto;
+            display: flex;
+            flex-direction: column;
+            height: 70vh;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, var(--dark-green), var(--primary-green));
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .chat-box {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f9fff9;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            margin: 0;
+            padding: 12px 15px;
+            border-radius: 12px;
+            max-width: 80%;
+            word-wrap: break-word;
+            line-height: 1.5;
+            position: relative;
+            animation: fadeIn 0.3s ease-out;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bot-message {
+            background: white;
+            border: 1px solid #e0e0e0;
+            align-self: flex-start;
+            border-top-left-radius: 5px;
+        }
+
+        .bot-message:before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 15px;
+            width: 0;
+            height: 0;
+            border: 5px solid transparent;
+            border-right-color: white;
+            border-left: 0;
+        }
+
+        .user-message {
+            background: linear-gradient(135deg, var(--light-green), var(--lighter-green));
+            color: white;
+            align-self: flex-end;
+            border-top-right-radius: 5px;
+        }
+
+        .user-message:before {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: 15px;
+            width: 0;
+            height: 0;
+            border: 5px solid transparent;
+            border-left-color: var(--light-green);
+            border-right: 0;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            outline: none;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            border-color: var(--light-green);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+
+        button {
+            background: var(--light-green);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            cursor: pointer;
+            margin-left: 10px;
+            border-radius: 25px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 50px;
+        }
+
+        button:hover {
+            background: var(--dark-green);
+            transform: scale(1.05);
+        }
+
+        .typing-indicator {
+            display: flex;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 12px;
+            align-self: flex-start;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #9e9e9e;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingAnimation {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+
+        .timestamp {
+            font-size: 0.7rem;
+            color: #757575;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .quick-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+
+        .quick-question {
+            background: var(--lighter-green);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-question:hover {
+            background: var(--dark-green);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 576px) {
+            .chat-container {
+                height: 80vh;
+                margin: 15px;
+                border-radius: 10px;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+        }
+
+        /* Custom scrollbar */
+        .chat-box::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .chat-box::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .chat-box::-webkit-scrollbar-thumb {
+            background: var(--light-green);
+            border-radius: 10px;
+        }
+        
+        .chat-box::-webkit-scrollbar-thumb:hover {
+            background: var(--dark-green);
+        }
+
+        .knowledge-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--light-green);
+        }
+        
+        .knowledge-title {
+            font-weight: 600;
+            color: var(--dark-green);
+            margin-bottom: 8px;
+        }
+        
+        .knowledge-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .knowledge-tag {
+            background: var(--bg-green);
+            color: var(--dark-green);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+        }
+        
+        .suggested-questions {
+            margin-top: 15px;
+            border-top: 1px dashed #ddd;
+            padding-top: 15px;
+        }
+        
+        .suggested-question {
+            display: block;
+            background: #f5f5f5;
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .suggested-question:hover {
+            background: var(--lighter-green);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-leaf"></i>
+                FarmAI
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home me-1"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/chatboot">
+                            <i class="fas fa-robot me-1"></i> AI Assistant
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/weather">
+                            <i class="fas fa-cloud-sun me-1"></i> Weather
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/market">
+                            <i class="fas fa-chart-line me-1"></i> Market
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/crop">
+                            <i class="fas fa-seedling me-1"></i> Crop Tools
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <span class="navbar-text">
+                        <i class="fas fa-sun me-1"></i> Smart Farming Solutions
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <i class="fas fa-robot"></i>
+            FarmAI Assistant
+        </div>
+        <div class="chat-box" id="chatBox">
+            <!-- Initial welcome message -->
+            <div class="message bot-message">
+                <div>Hello farmer! 👋 I'm your FarmAI assistant. How can I help you today?</div>
+                <div class="timestamp" id="welcomeTime"></div>
+                <div class="quick-questions mt-2">
+                   
+                    <button class="quick-question" onclick="askQuickQuestion('how to control pests')">Pest control</button>
+                    <button class="quick-question" onclick="askQuickQuestion('fertilizer recommendations')">Fertilizers</button>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Ask about crops, weather, or farming techniques..." 
+                   onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // API Configuration
+const OPENROUTER_API_KEY = "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";
+const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+// Comprehensive farming knowledge base
+const farmingKnowledge = {
+    // Crop-specific knowledge
+    crops: {
+        "rice": {
+            description: "Rice is a staple food crop that thrives in warm, humid conditions with standing water. Ideal for regions with heavy rainfall or irrigation facilities.",
+            seasons: ["Kharif (June-October)"],
+            soil: "Clayey or loamy soils with good water retention",
+            water: "Requires standing water (5-10cm depth) for most of growth period",
+            varieties: ["Basmati (aromatic)", "IR64 (high yield)", "Swarna (flood tolerant)"],
+            practices: [
+                "Transplant seedlings after 25-30 days in nursery",
+                "Maintain proper water level throughout growth",
+                "Apply nitrogen in 3 splits (basal, tillering, panicle initiation)"
+            ]
+        },
+        "wheat": {
+            description: "Wheat is a Rabi season crop grown in cooler temperatures. It's a major staple food in India and requires well-drained fertile soils.",
+            seasons: ["Rabi (October-March)"],
+            soil: "Well-drained loamy soils",
+            water: "4-6 irrigations depending on rainfall",
+            varieties: ["HD-2967 (high yield)", "PBW-550 (disease resistant)", "Sharbati (quality)"],
+            practices: [
+                "Sow in rows with 20cm spacing",
+                "First irrigation 20-25 days after sowing",
+                "Control weeds with cultural or chemical methods"
+            ]
+        },
+        "maize": {
+            description: "Maize is a versatile crop grown in both Kharif and Rabi seasons. It's used for human consumption, animal feed, and industrial purposes.",
+            seasons: ["Kharif (June-September)", "Rabi (October-March)"],
+            soil: "Well-drained sandy loam to clay loam",
+            water: "500-600mm per crop cycle",
+            varieties: ["HQPM-1 (quality protein)", "Pusa Hybrid-3", "African Tall"],
+            practices: [
+                "Sow at 60x20cm spacing",
+                "Apply 120:60:40 kg NPK/ha",
+                "Control stem borer with timely sprays"
+            ]
+        },
+        "cotton": {
+            description: "Cotton is an important cash crop and fiber crop. It requires long frost-free period, plenty of sunshine and moderate rainfall.",
+            seasons: ["Kharif (June-December)"],
+            soil: "Black cotton soil is ideal",
+            water: "700-1100mm per crop cycle",
+            varieties: ["Bollgard-II (Bt cotton)", "Suvin (extra long staple)", "MCU-5 (medium staple)"],
+            practices: [
+                "Sow at 90x60cm spacing",
+                "Apply 100:50:50 kg NPK/ha",
+                "Monitor for bollworms regularly"
+            ]
+        }
+    },
+    
+    // Soil management
+    soil: {
+        "testing": "Soil testing should be done every 2-3 years to determine pH, organic matter, and nutrient levels. Collect samples from multiple locations at 15cm depth.",
+        "improvement": {
+            "clay": "Add organic matter and sand to improve drainage",
+            "sandy": "Add compost and clay to improve water retention",
+            "acidic": "Apply lime to raise pH (2-4 tons/acre depending on acidity)",
+            "alkaline": "Apply gypsum or sulfur to lower pH"
+        },
+        "nutrients": {
+            "N": "Nitrogen promotes leaf growth. Deficiency causes yellowing of older leaves.",
+            "P": "Phosphorus aids root development. Deficiency causes purplish leaves.",
+            "K": "Potassium improves disease resistance. Deficiency causes leaf edge browning."
+        }
+    },
+    
+    // Pest and disease management
+    pests: {
+        "common": [
+            "Aphids (suck sap from leaves)",
+            "Bollworms (attack cotton bolls)",
+            "Stem borers (tunnel into stems)",
+            "Whiteflies (spread viral diseases)"
+        ],
+        "control": {
+            "organic": "Neem oil, garlic-chili spray, biological controls (ladybugs, parasitic wasps)",
+            "chemical": "Use targeted pesticides following recommended doses and safety periods",
+            "cultural": "Crop rotation, intercropping, resistant varieties"
+        },
+        "diseases": {
+            "fungal": "Use fungicides like copper oxychloride, maintain proper spacing for air circulation",
+            "bacterial": "Use antibiotics like streptocycline, practice crop rotation",
+            "viral": "Control insect vectors, use resistant varieties"
+        }
+    },
+    
+    // Irrigation techniques
+    irrigation: {
+        "methods": {
+            "flood": "Traditional method for rice, high water use",
+            "drip": "Efficient for orchards and vegetables, saves 30-50% water",
+            "sprinkler": "Good for field crops, provides uniform coverage",
+            "furrow": "For row crops like maize, cotton"
+        },
+        "scheduling": "Irrigate when soil moisture reaches 50% of field capacity. Use finger test or moisture sensors.",
+        "conservation": [
+            "Mulching to reduce evaporation",
+            "Contour farming in slopes",
+            "Rainwater harvesting"
+        ]
+    },
+    
+    // Organic farming
+    organic: {
+        "principles": "Avoid synthetic inputs, use crop rotation, green manure, compost, and biological pest control",
+        "inputs": {
+            "manure": "Farmyard manure (10-15 tons/acre), compost, vermicompost",
+            "biofertilizers": "Rhizobium, Azotobacter, PSB, VAM",
+            "pestcontrol": "Neem-based products, Trichoderma, Beauveria bassiana"
+        },
+        "certification": "Requires 3-year transition period, documentation of practices, and annual inspections"
+    },
+    
+    // Government schemes
+    schemes: {
+        "PM-KISAN": "₹6000/year direct benefit transfer to farmers in 3 installments",
+        "SoilHealthCard": "Free soil testing every 3 years with recommendations",
+        "PMFBY": "Pradhan Mantri Fasal Bima Yojana provides crop insurance at subsidized rates",
+        "NeemCoatedUrea": "Subsidized neem-coated urea to improve nitrogen use efficiency"
+    }
+};
+
+// Conversation history with enhanced system prompt
+let conversationHistory = [
+    {
+        role: "system",
+        content: `You are FarmAI, an expert agricultural assistant with comprehensive knowledge of all farming aspects. Your expertise includes:
+        
+1. CROP PRODUCTION:
+- Detailed guidance for 50+ crops including cereals, pulses, oilseeds, vegetables, fruits
+- Season-specific recommendations (Kharif/Rabi/Zaid)
+- Soil and climate requirements
+- Varietal selection
+- Package of practices (sowing to harvest)
+
+2. SOIL HEALTH:
+- Soil testing interpretation
+- Nutrient management
+- Soil amendment recommendations
+- Organic matter improvement
+
+3. WATER MANAGEMENT:
+- Irrigation scheduling
+- Water conservation techniques
+- Drought management
+- Micro-irrigation systems
+
+4. PEST/DISEASE MANAGEMENT:
+- Identification of common pests/diseases
+- IPM strategies
+- Organic control methods
+- Safe pesticide use
+
+5. FARM MECHANIZATION:
+- Equipment selection
+- Operation guidance
+- Maintenance tips
+- Cost-benefit analysis
+
+6. ORGANIC FARMING:
+- Certification process
+- Input preparation
+- Pest management
+- Marketing strategies
+
+7. AGRI-BUSINESS:
+- Market trends
+- Post-harvest management
+- Value addition
+- Government schemes
+
+For Indian farmers, provide location-specific advice when possible. Use metric units. Give practical, actionable recommendations in clear language. Format complex information with bullet points for readability. Always prioritize sustainable and economically viable solutions.`
+    },
+    {
+        role: "assistant",
+        content: "Namaste Kisan! 🙏 I'm FarmAI, your digital farming assistant. I can help with:\n\n• Crop selection & cultivation advice\n• Soil health & fertilizer recommendations\n• Pest/disease diagnosis & management\n• Irrigation scheduling\n• Organic farming techniques\n• Farm equipment guidance\n• Government schemes information\n\nWhat would you like to know today?"
+    }
+];
+
+// Enhanced predefined responses with farming knowledge
+const predefinedResponses = {
+    // General greetings
+    "hello": "Namaste Kisan! 🙏 How can I assist with your farming today?",
+    "hi": "Hello farmer! What farming challenge can I help you solve?",
+    "thanks": "You're welcome! Always happy to support India's annadatas (food providers).",
+    
+    // Crop-related
+    "rice cultivation": farmingKnowledge.crops.rice.description + "\n\nKey practices:\n- " + farmingKnowledge.crops.rice.practices.join("\n- "),
+    "wheat farming": farmingKnowledge.crops.wheat.description + "\n\nKey practices:\n- " + farmingKnowledge.crops.wheat.practices.join("\n- "),
+    "maize cultivation": farmingKnowledge.crops.maize.description + "\n\nKey practices:\n- " + farmingKnowledge.crops.maize.practices.join("\n- "),
+    "cotton farming": farmingKnowledge.crops.cotton.description + "\n\nKey practices:\n- " + farmingKnowledge.crops.cotton.practices.join("\n- "),
+    
+    // Soil-related
+    "soil testing": farmingKnowledge.soil.testing,
+    "improve clay soil": farmingKnowledge.soil.improvement.clay,
+    "soil nutrients": "Essential soil nutrients:\n- Nitrogen (N): " + farmingKnowledge.soil.nutrients.N + "\n- Phosphorus (P): " + farmingKnowledge.soil.nutrients.P + "\n- Potassium (K): " + farmingKnowledge.soil.nutrients.K,
+    
+    // Pest-related
+    "common pests": "Major agricultural pests include:\n- " + farmingKnowledge.pests.common.join("\n- "),
+    "organic pest control": "Organic pest management options:\n- " + Object.values(farmingKnowledge.pests.control.organic).join("\n- "),
+    "disease control": "Disease management approaches:\n- Fungal: " + farmingKnowledge.pests.diseases.fungal + "\n- Bacterial: " + farmingKnowledge.pests.diseases.bacterial + "\n- Viral: " + farmingKnowledge.pests.diseases.viral,
+    
+    // Irrigation-related
+    "irrigation methods": "Common irrigation techniques:\n- Flood: " + farmingKnowledge.irrigation.methods.flood + "\n- Drip: " + farmingKnowledge.irrigation.methods.drip + "\n- Sprinkler: " + farmingKnowledge.irrigation.methods.sprinkler + "\n- Furrow: " + farmingKnowledge.irrigation.methods.furrow,
+    "water conservation": "Water conservation methods:\n- " + farmingKnowledge.irrigation.conservation.join("\n- "),
+    
+    // Organic farming
+    "organic farming": farmingKnowledge.organic.principles + "\n\nKey inputs:\n- Manure: " + farmingKnowledge.organic.inputs.manure + "\n- Biofertilizers: " + farmingKnowledge.organic.inputs.biofertilizers + "\n- Pest Control: " + farmingKnowledge.organic.inputs.pestcontrol,
+    
+    // Government schemes
+    "government schemes": "Key government schemes for farmers:\n- PM-KISAN: " + farmingKnowledge.schemes["PM-KISAN"] + "\n- Soil Health Card: " + farmingKnowledge.schemes.SoilHealthCard + "\n- PMFBY: " + farmingKnowledge.schemes.PMFBY + "\n- Neem Coated Urea: " + farmingKnowledge.schemes.NeemCoatedUrea
+};
+
+// Set welcome message timestamp
+document.getElementById('welcomeTime').textContent = getCurrentTime();
+
+function getCurrentTime() {
+    const now = new Date();
+    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function appendMessage(message, isUser) {
+    const chatBox = document.getElementById('chatBox');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+    
+    // Create message content with timestamp
+    const messageContent = document.createElement('div');
+    messageContent.innerHTML = message; // Use innerHTML to render HTML content
+    messageDiv.appendChild(messageContent);
+    
+    const timestamp = document.createElement('div');
+    timestamp.className = 'timestamp';
+    timestamp.textContent = getCurrentTime();
+    messageDiv.appendChild(timestamp);
+    
+    chatBox.appendChild(messageDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function showTypingIndicator() {
+    const chatBox = document.getElementById('chatBox');
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'typing-indicator';
+    typingDiv.id = 'typingIndicator';
+    
+    for (let i = 0; i < 3; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'typing-dot';
+        typingDiv.appendChild(dot);
+    }
+    
+    chatBox.appendChild(typingDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return typingDiv;
+}
+
+function hideTypingIndicator() {
+    const typingIndicator = document.getElementById('typingIndicator');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
+}
+
+function handleKeyPress(e) {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+function askQuickQuestion(question) {
+    document.getElementById('userInput').value = question;
+    sendMessage();
+}
+
+async function sendMessage() {
+    const userInput = document.getElementById('userInput');
+    const message = userInput.value.trim();
+    const chatBox = document.getElementById('chatBox');
+
+    if (!message) return;
+
+    appendMessage(message, true);
+    userInput.value = '';
+
+    // Add user message to conversation history
+    conversationHistory.push({
+        role: "user",
+        content: message
+    });
+
+    // Show typing indicator
+    const typingIndicator = showTypingIndicator();
+
+    // Check for predefined responses first
+    const lowerMessage = message.toLowerCase();
+    let foundPredefined = false;
+    
+    for (const [key, response] of Object.entries(predefinedResponses)) {
+        if (lowerMessage.includes(key)) {
+            setTimeout(() => {
+                hideTypingIndicator();
+                
+                // Create enhanced response with knowledge card
+                const fullResponse = createKnowledgeResponse(key, response);
+                appendMessage(fullResponse, false);
+                
+                // Add bot response to conversation history
+                conversationHistory.push({
+                    role: "assistant",
+                    content: fullResponse
+                });
+            }, 1000);
+            foundPredefined = true;
+            break;
+        }
+    }
+    
+    if (foundPredefined) return;
+
+    try {
+        const response = await fetch(OPENROUTER_API_URL, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+                "HTTP-Referer": window.location.href,
+                "X-Title": "FarmAI Assistant",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "model": "openai/gpt-3.5-turbo",
+                "messages": conversationHistory,
+                "temperature": 0.7
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("API Response:", data);
+
+        // Simulate a delay to make it feel natural
+        setTimeout(() => {
+            hideTypingIndicator();
+            
+            if (data.choices && data.choices.length > 0) {
+                let botResponse = data.choices[0].message.content;
+                
+                // Enhance the response with additional knowledge if applicable
+                botResponse = enhanceResponseWithKnowledge(botResponse);
+                
+                appendMessage(botResponse, false);
+                // Add bot response to conversation history
+                conversationHistory.push({
+                    role: "assistant",
+                    content: botResponse
+                });
+            } else {
+                const errorMessage = "I couldn't find an answer to that. Could you try asking differently?";
+                appendMessage(errorMessage, false);
+                conversationHistory.push({
+                    role: "assistant",
+                    content: errorMessage
+                });
+            }
+        }, 1500);
+
+    } catch (error) {
+        console.error("Error:", error);
+        hideTypingIndicator();
+        const errorMessage = `Sorry, I encountered an error: ${error.message}. Please try again later.`;
+        appendMessage(errorMessage, false);
+        conversationHistory.push({
+            role: "assistant",
+            content: errorMessage
+        });
+    }
+}
+
+function createKnowledgeResponse(topic, response) {
+    // Create a knowledge card for specific topics
+    let knowledgeCard = '';
+    
+    // Check for crop-specific responses
+    for (const crop in farmingKnowledge.crops) {
+        if (topic.includes(crop)) {
+            const cropInfo = farmingKnowledge.crops[crop];
+            knowledgeCard = `
+                <div class="knowledge-card">
+                    <div class="knowledge-title">${crop.charAt(0).toUpperCase() + crop.slice(1)} Cultivation</div>
+                    <div>🌱 <strong>Best Season:</strong> ${cropInfo.seasons.join(", ")}</div>
+                    <div>🌍 <strong>Ideal Soil:</strong> ${cropInfo.soil}</div>
+                    <div>💧 <strong>Water Needs:</strong> ${cropInfo.water}</div>
+                    <div class="knowledge-tags">
+                        ${cropInfo.varieties.map(v => `<span class="knowledge-tag">${v}</span>`).join("")}
+                    </div>
+                </div>
+            `;
+            break;
+        }
+    }
+    
+    // Check for pest-related responses
+    if (topic.includes("pest")) {
+        knowledgeCard = `
+            <div class="knowledge-card">
+                <div class="knowledge-title">Pest Management Strategies</div>
+                <div>🛡️ <strong>Prevention:</strong> Use resistant varieties, crop rotation</div>
+                <div>🔍 <strong>Monitoring:</strong> Regular field scouting</div>
+                <div>⚔️ <strong>Control:</strong> Start with cultural/biological methods before chemicals</div>
+                <div class="suggested-questions">
+                    <div class="suggested-question" onclick="askQuickQuestion('organic pest control for vegetables')">Ask about organic pest control</div>
+                    <div class="suggested-question" onclick="askQuickQuestion('how to identify common pests')">Ask about pest identification</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Check for soil-related responses
+    if (topic.includes("soil")) {
+        knowledgeCard = `
+            <div class="knowledge-card">
+                <div class="knowledge-title">Soil Health Tips</div>
+                <div>🧪 <strong>Testing:</strong> ${farmingKnowledge.soil.testing}</div>
+                <div>🔄 <strong>Improvement:</strong> Add organic matter regularly</div>
+                <div>⚖️ <strong>Balance:</strong> Maintain proper pH (6.0-7.5 for most crops)</div>
+                <div class="suggested-questions">
+                    <div class="suggested-question" onclick="askQuickQuestion('how to improve clay soil')">Improving clay soil</div>
+                    <div class="suggested-question" onclick="askQuickQuestion('soil nutrients explained')">Soil nutrients</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    return response + knowledgeCard;
+}
+
+function enhanceResponseWithKnowledge(response) {
+    // Check if response mentions any specific crops
+    for (const crop in farmingKnowledge.crops) {
+        if (response.toLowerCase().includes(crop)) {
+            return response + `
+                <div class="suggested-questions">
+                    <div>More about ${crop}:</div>
+                    <div class="suggested-question" onclick="askQuickQuestion('best varieties of ${crop}')">Varieties</div>
+                    <div class="suggested-question" onclick="askQuickQuestion('${crop} fertilizer requirements')">Fertilization</div>
+                    <div class="suggested-question" onclick="askQuickQuestion('common diseases in ${crop}')">Disease control</div>
+                </div>
+            `;
+        }
+    }
+    
+    // Check for soil-related terms
+    const soilTerms = ["soil", "nutrient", "fertilizer", "compost"];
+    if (soilTerms.some(term => response.toLowerCase().includes(term))) {
+        return response + `
+            <div class="suggested-questions">
+                <div>More about soil:</div>
+                <div class="suggested-question" onclick="askQuickQuestion('how to test soil')">Soil testing</div>
+                <div class="suggested-question" onclick="askQuickQuestion('improving sandy soil')">Soil improvement</div>
+                <div class="suggested-question" onclick="askQuickQuestion('organic soil amendments')">Organic options</div>
+            </div>
+        `;
+    }
+    
+    // Check for water-related terms
+    const waterTerms = ["water", "irrigation", "drip", "sprinkler"];
+    if (waterTerms.some(term => response.toLowerCase().includes(term))) {
+        return response + `
+            <div class="suggested-questions">
+                <div>More about water:</div>
+                <div class="suggested-question" onclick="askQuickQuestion('best irrigation methods')">Irrigation types</div>
+                <div class="suggested-question" onclick="askQuickQuestion('water conservation techniques')">Conservation</div>
+                <div class="suggested-question" onclick="askQuickQuestion('drip irrigation setup')">Drip systems</div>
+            </div>
+        `;
+    }
+    
+    return response;
+}
+
+// Add event listener for Enter key
+document.getElementById('userInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+
+// Add click handlers for quick questions in the welcome message
+document.querySelectorAll('.quick-question').forEach(button => {
+    button.addEventListener('click', function() {
+        askQuickQuestion(this.textContent);
+    });
+});
+    </script>
+</body>
+</html>

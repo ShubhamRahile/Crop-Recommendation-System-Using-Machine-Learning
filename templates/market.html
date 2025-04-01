@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FarmAI - Market Intelligence</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAKU6bPdSzi1gy03ZFGdKLWb42HfBBA-fE&callback=initMap&libraries=places&v=weekly"
+        async defer></script>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2E7D32;
+            --accent-color: #8BC34A;
+            --dark-color: #1B5E20;
+            --light-color: #f8f9fa;
+            --text-color: #333;
+        }
+
+        .card-header h3 {
+            color: white !important;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4efe9 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: var(--dark-color) !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .navbar-brand i {
+            color: var(--accent-color);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--dark-color);
+            font-weight: 700;
+            position: relative;
+            display: inline-block;
+        }
+
+        h1:after,
+        h2:after {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 4px;
+            background: var(--accent-color);
+            bottom: -10px;
+            left: 25%;
+            border-radius: 2px;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+            margin-bottom: 50px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--dark-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            font-weight: 600;
+            border-bottom: none;
+        }
+
+        .card-header i {
+            margin-right: 10px;
+        }
+
+        .form-control {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.25rem rgba(76, 175, 80, 0.25);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 12px 25px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Market Prices Table */
+        .price-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .price-table th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .price-table td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .price-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .price-up {
+            color: #2E7D32;
+            font-weight: 600;
+        }
+
+        .price-down {
+            color: #d32f2f;
+            font-weight: 600;
+        }
+
+        /* Mandi Map */
+        #mandi-map {
+            height: 400px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .mandi-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .mandi-item {
+            border-left: 3px solid var(--accent-color);
+            transition: all 0.3s;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .mandi-item:hover {
+            transform: translateX(5px);
+            background-color: rgba(139, 195, 74, 0.1);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            #mandi-map {
+                height: 300px;
+                margin-bottom: 15px;
+            }
+        }
+
+        #mandi-map {
+            height: 400px;
+            position: relative;
+        }
+
+        #mandi-map.loading:before {
+            content: "Loading map...";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 0.2em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border 0.75s linear infinite;
+        }
+
+        @keyframes spinner-border {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-leaf"></i>
+                FarmAI
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home me-1"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/chatboot">
+                            <i class="fas fa-robot me-1"></i> AI Assistant
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/weather">
+                            <i class="fas fa-cloud-sun me-1"></i> Weather
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/market">
+                            <i class="fas fa-chart-line me-1"></i> Market
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/crop">
+                            <i class="fas fa-seedling me-1"></i> Crop Tools
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <span class="navbar-text">
+                        <i class="fas fa-sun me-1"></i> Smart Farming Solutions
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="text-center mb-5">
+            <h1><i class="fas fa-chart-line"></i> Market Intelligence</h1>
+            <p class="lead">Get real-time market prices, demand forecasts, and nearby mandi information</p>
+        </div>
+
+        <!-- Market Prices Section -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-tags"></i> Local Market Prices</h3>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label for="crop-select" class="form-label">Select Crop</label>
+                        <select class="form-select" id="crop-select">
+                            <option value="">Choose a crop...</option>
+                            <option value="wheat">Wheat</option>
+                            <option value="rice">Rice</option>
+                            <option value="corn">Corn</option>
+                            <option value="soybean">Soybean</option>
+                            <option value="potato">Potato</option>
+                            <option value="tomato">Tomato</option>
+                            <option value="onion">Onion</option>
+                            <!-- Added Maharashtra-specific crops -->
+                            <option value="sugarcane">Sugarcane</option>
+                            <option value="cotton">Cotton</option>
+                            <option value="turmeric">Turmeric</option>
+                            <option value="pulses">Pulses (Toor, Moong, Urad)</option>
+                            <option value="grapes">Grapes</option>
+                            <option value="banana">Banana</option>
+                            <option value="orange">Orange (Nagpur)</option>
+                            <option value="pomegranate">Pomegranate</option>
+                            <option value="mango">Mango </option>
+                            <option value="chilli">Chilli</option>
+                            <option value="brinjal">Brinjal</option>
+                            <option value="okra">Okra (Bhindi)</option>
+                            <option value="cucumber">Cucumber</option>
+                            <option value="cauliflower">Cauliflower</option>
+                            <option value="cabbage">Cabbage</option>
+                            <option value="groundnut">Groundnut</option>
+                            <option value="sunflower">Sunflower</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="location-input" class="form-label">Location</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="location-input"
+                                placeholder="Enter your district">
+                            <button class="btn btn-outline-secondary" type="button" id="location-button">
+                                <i class="fas fa-location-arrow"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="fetch-prices-btn">
+                    <i class="fas fa-search me-2"></i> Get Prices
+                </button>
+
+                <div id="price-results" class="mt-4">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-info-circle fa-2x mb-3"></i>
+                        <p>Select a crop and location to view market prices</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demand Forecast Section -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-chart-bar"></i> Demand Forecast</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <canvas id="demand-chart" height="200"></canvas>
+                    </div>
+                    <div class="col-md-4">
+                        <h4 class="mb-3">Top Crops in Demand</h4>
+                        <div class="list-group" id="demand-list">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nearby Mandi Section -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-map-marked-alt"></i> Nearby Mandi Locations</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div id="mandi-map"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="mandi-search"
+                                placeholder="Enter city or mandi name...">
+                            <button class="btn btn-primary" type="button" id="search-mandi-btn">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                        <div class="mandi-list" id="mandi-list">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Market Data Service
+        class MarketDataService {
+            static async fetchPrices(crop, location) {
+                // Simulate API call with timeout
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        const data = {
+                            wheat: [
+                                { mandi: "Pune Market Yard", price: "₹2,100/qtl", change: "+2%", distance: "120km", contact: "020-24262621" },
+                                { mandi: "Nashik APMC Market", price: "₹2,050/qtl", change: "-1%", distance: "150km", contact: "0253-2573091" }
+                            ],
+                            rice: [
+                                { mandi: "Kolhapur APMC Market", price: "₹1,950/qtl", change: "+5%", distance: "350km", contact: "0231-2654321" },
+                                { mandi: "Satara Market Yard", price: "₹1,920/qtl", change: "+3%", distance: "220km", contact: "02162-230456" }
+                            ],
+                            corn: [
+                                { mandi: "Nagpur APMC Market", price: "₹1,650/qtl", change: "0%", distance: "750km", contact: "0712-2541122" }
+                            ],
+                            soybean: [
+                                { mandi: "Aurangabad APMC", price: "₹3,250/qtl", change: "+7%", distance: "300km", contact: "0240-2334567" }
+                            ],
+                            potato: [
+                                { mandi: "Pune Gultekdi Market", price: "₹800/qtl", change: "+10%", distance: "125km", contact: "020-24271717" }
+                            ],
+                            tomato: [
+                                { mandi: "Mumbai APMC Market (Vashi)", price: "₹1,200/qtl", change: "-5%", distance: "0km", contact: "022-27651718" }
+                            ],
+                            onion: [
+                                { mandi: "Lasalgaon Onion Market", price: "₹1,500/qtl", change: "+15%", distance: "180km", contact: "0253-222222" },
+                                { mandi: "Nashik APMC Market", price: "₹1,450/qtl", change: "+12%", distance: "150km", contact: "0253-2573091" }
+                            ]
+                        };
+                        resolve(data[crop] || []);
+                    }, 800);
+                });
+            }
+
+            static getDemandData() {
+                return {
+                    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+                    datasets: [
+                        {
+                            label: "Onion",
+                            data: [75, 82, 90, 85, 78, 95],
+                            borderColor: "#FF6384",
+                            backgroundColor: "rgba(255, 99, 132, 0.2)",
+                            tension: 0.3
+                        },
+                        {
+                            label: "Sugarcane",
+                            data: [45, 50, 55, 60, 65, 70],
+                            borderColor: "#36A2EB",
+                            backgroundColor: "rgba(54, 162, 235, 0.2)",
+                            tension: 0.3
+                        },
+                        {
+                            label: "Grapes",
+                            data: [30, 35, 40, 45, 50, 65],
+                            borderColor: "#FFCE56",
+                            backgroundColor: "rgba(255, 206, 86, 0.2)",
+                            tension: 0.3
+                        },
+                        {
+                            label: "Cotton",
+                            data: [60, 65, 70, 75, 80, 85],
+                            borderColor: "#4BC0C0",
+                            backgroundColor: "rgba(75, 192, 192, 0.2)",
+                            tension: 0.3
+                        },
+                        {
+                            label: "Orange (Nagpur)",
+                            data: [40, 45, 50, 55, 60, 75],
+                            borderColor: "#9966FF",
+                            backgroundColor: "rgba(153, 102, 255, 0.2)",
+                            tension: 0.3
+                        }
+                    ]
+                };
+            }
+            static getTopCrops() {
+                return [
+                    { name: "Onion", demand: "Very High" },
+                    { name: "Sugarcane", demand: "High" },
+                    { name: "Grapes", demand: "High" },
+                    { name: "Cotton", demand: "Medium" },
+                    { name: "Orange (Nagpur)", demand: "Medium" },
+                    { name: "Pomegranate", demand: "Medium" },
+                    { name: "Mango ", demand: "Medium" },
+                    { name: "Turmeric", demand: "Medium" }
+                ];
+            }
+        }
+
+        // Mandi Data Service
+        class MandiDataService {
+            static getMandis() {
+                return [
+                    // Mumbai mandis
+                    { name: "Mumbai APMC Market (Vashi)", lat: 19.0760, lng: 72.9988, distance: "0km", contact: "022-27651718", crops: ["Vegetables", "Fruits", "Onion"] },
+                    { name: "Mumbai Flower Market (Dadur)", lat: 19.0216, lng: 72.8424, distance: "15km", contact: "022-24131111", crops: ["Flowers"] },
+
+                    // Pune mandis
+                    { name: "Pune Market Yard", lat: 18.5074, lng: 73.8477, distance: "120km", contact: "020-24262621", crops: ["Vegetables", "Fruits", "Grains"] },
+                    { name: "Pune Gultekdi Market", lat: 18.4930, lng: 73.8640, distance: "125km", contact: "020-24271717", crops: ["Vegetables", "Fruits"] },
+
+                    // Nashik mandis
+                    { name: "Nashik APMC Market", lat: 20.0059, lng: 73.7793, distance: "150km", contact: "0253-2573091", crops: ["Onion", "Vegetables"] },
+                    { name: "Lasalgaon Onion Market", lat: 20.1429, lng: 74.2394, distance: "180km", contact: "0253-222222", crops: ["Onion"] },
+
+                    // Nagpur mandis
+                    { name: "Nagpur APMC Market", lat: 21.1458, lng: 79.0882, distance: "750km", contact: "0712-2541122", crops: ["Orange", "Cotton", "Soybean"] },
+                    { name: "Kalamna Market", lat: 21.1595, lng: 79.0807, distance: "755km", contact: "0712-2534567", crops: ["Vegetables", "Fruits"] },
+
+                    // Kolhapur mandis
+                    { name: "Kolhapur APMC Market", lat: 16.7050, lng: 74.2433, distance: "350km", contact: "0231-2654321", crops: ["Sugarcane", "Grapes"] },
+
+                    // Satara mandis
+                    { name: "Satara Market Yard", lat: 17.6805, lng: 74.0183, distance: "220km", contact: "02162-230456", crops: ["Potato", "Onion"] },
+
+                    // Aurangabad mandis
+                    { name: "Aurangabad APMC", lat: 19.8762, lng: 75.3433, distance: "300km", contact: "0240-2334567", crops: ["Onion", "Garlic"] },
+
+                    // Mahapatra's mandis (fictional examples)
+                    { name: "Mahapatra Grains Market (Pune)", lat: 18.5204, lng: 73.8567, distance: "122km", contact: "020-98765432", crops: ["Wheat", "Rice", "Pulses"] },
+                    { name: "Mahapatra Vegetables (Nashik)", lat: 19.9975, lng: 73.7898, distance: "152km", contact: "0253-9876543", crops: ["Tomato", "Onion", "Potato"] },
+                    { name: "Mahapatra Fruits (Nagpur)", lat: 21.1359, lng: 79.0889, distance: "752km", contact: "0712-8765432", crops: ["Orange", "Banana", "Grapes"] }
+                ];
+            }
+
+            static async searchMandis(query) {
+                // Simulate API call with timeout
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        const allMandis = this.getMandis();
+                        if (!query) {
+                            resolve(allMandis);
+                            return;
+                        }
+
+                        const filtered = allMandis.filter(mandi =>
+                            mandi.name.toLowerCase().includes(query.toLowerCase()) ||
+                            mandi.crops.some(crop => crop.toLowerCase().includes(query.toLowerCase()))
+                        );
+                        resolve(filtered);
+                    }, 500);
+                });
+            }
+        }
+
+        // Map Service
+        class MapService {
+            constructor(mapElementId) {
+                this.mapElementId = mapElementId;
+                this.map = null;
+                this.markers = [];
+                this.infoWindows = [];
+            }
+
+            initMap(center, zoom) {
+                try {
+                    if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+                        throw new Error('Google Maps API not loaded');
+                    }
+
+                    this.map = new google.maps.Map(document.getElementById(this.mapElementId), {
+                        center: center,
+                        zoom: zoom,
+                        gestureHandling: "cooperative"
+                    });
+
+                    return true;
+                } catch (error) {
+                    console.error("Map initialization error:", error);
+                    this.showMapError(error.message);
+                    return false;
+                }
+            }
+
+            showMapError(message) {
+                document.getElementById(this.mapElementId).innerHTML = `
+                    <div class="alert alert-danger p-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Map Loading Error</strong><br>
+                        ${message}<br>
+                        <small class="mt-2">Please check your API key and internet connection</small>
+                    </div>
+                `;
+            }
+
+            addMarker(position, title, iconUrl) {
+                if (!this.map) return null;
+
+                const marker = new google.maps.Marker({
+                    position: position,
+                    map: this.map,
+                    title: title,
+                    icon: iconUrl ? {
+                        url: iconUrl
+                    } : null
+                });
+
+                this.markers.push(marker);
+                return marker;
+            }
+
+            addInfoWindow(marker, content) {
+                if (!this.map) return;
+
+                const infoWindow = new google.maps.InfoWindow({ content });
+                marker.addListener("click", () => {
+                    // Close all other info windows first
+                    this.infoWindows.forEach(iw => iw.close());
+                    infoWindow.open(this.map, marker);
+                });
+                this.infoWindows.push(infoWindow);
+            }
+
+            clearMarkers() {
+                this.markers.forEach(marker => marker.setMap(null));
+                this.markers = [];
+                this.infoWindows = [];
+            }
+
+            fitBounds(mandis) {
+                if (!this.map || !mandis.length) return;
+
+                const bounds = new google.maps.LatLngBounds();
+                mandis.forEach(mandi => bounds.extend({ lat: mandi.lat, lng: mandi.lng }));
+                this.map.fitBounds(bounds);
+
+                // Prevent zooming in too close
+                if (this.map.getZoom() > 12) {
+                    this.map.setZoom(12);
+                }
+            }
+
+            centerOnLocation(lat, lng, zoom = 12) {
+                if (this.map) {
+                    this.map.setCenter({ lat, lng });
+                    this.map.setZoom(zoom);
+                }
+            }
+        }
+
+        // UI Service
+        class UIService {
+            static showLoading(elementId, message = "Loading...") {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.innerHTML = `
+                        <div class="text-center py-4">
+                            <div class="loading-spinner mx-auto mb-2"></div>
+                            <p>${message}</p>
+                        </div>
+                    `;
+                }
+            }
+
+            static showError(elementId, message) {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            ${message}
+                        </div>
+                    `;
+                }
+            }
+
+            static renderPriceTable(prices, elementId) {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+
+                if (!prices.length) {
+                    element.innerHTML = `
+                        <div class="alert alert-info">
+                            No price data available for the selected criteria
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `
+                    <div class="table-responsive">
+                        <table class="price-table">
+                            <thead>
+                                <tr>
+                                    <th>Mandi Name</th>
+                                    <th>Price</th>
+                                    <th>Change</th>
+                                    <th>Distance</th>
+                                    <th>Contact</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                prices.forEach(item => {
+                    const changeClass = item.change.startsWith('+') ? 'price-up' :
+                        item.change.startsWith('-') ? 'price-down' : '';
+                    html += `
+                        <tr>
+                            <td>${item.mandi}</td>
+                            <td>${item.price}</td>
+                            <td class="${changeClass}">${item.change}</td>
+                            <td>${item.distance}</td>
+                            <td><a href="tel:${item.contact}">${item.contact}</a></td>
+                        </tr>
+                    `;
+                });
+
+                html += `</tbody></table></div>`;
+                element.innerHTML = html;
+            }
+
+            static renderMandiList(mandis, elementId) {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+
+                if (!mandis.length) {
+                    element.innerHTML = `
+                        <div class="alert alert-info">
+                            No mandis found matching your criteria
+                        </div>
+                    `;
+                    return;
+                }
+
+                element.innerHTML = mandis.map(mandi => `
+                    <div class="mandi-item p-3 rounded">
+                        <h5 class="mb-1">${mandi.name}</h5>
+                        <p class="mb-1 text-muted"><small>${mandi.distance} away</small></p>
+                        <p class="mb-1"><i class="fas fa-phone-alt me-2"></i>${mandi.contact}</p>
+                        <p class="mb-0"><i class="fas fa-seedling me-2"></i>${mandi.crops.join(', ')}</p>
+                    </div>
+                `).join('');
+
+                // Add click handlers
+                document.querySelectorAll('.mandi-item').forEach((item, index) => {
+                    item.addEventListener('click', () => {
+                        const mandi = mandis[index];
+                        mapService.centerOnLocation(mandi.lat, mandi.lng, 14);
+                        // Highlight the corresponding marker if needed
+                    });
+                });
+            }
+
+            static renderDemandChart(elementId) {
+                const ctx = document.getElementById(elementId).getContext('2d');
+                const data = MarketDataService.getDemandData();
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: '6-Month Demand Trend for Maharashtra Crops',
+                                font: {
+                                    size: 16
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'Demand Index'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Months'
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
+                        }
+                    }
+                });
+            }
+
+            static renderTopCrops(crops, elementId) {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+
+                element.innerHTML = crops.map(crop => `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        ${crop.name}
+                        <span class="badge ${this.getDemandBadgeClass(crop.demand)} rounded-pill">
+                            ${crop.demand}
+                        </span>
+                    </div>
+                `).join('');
+            }
+
+            static getDemandBadgeClass(demand) {
+                switch (demand.toLowerCase()) {
+                    case 'high': return 'bg-success';
+                    case 'very high': return 'bg-danger';
+                    case 'medium': return 'bg-warning';
+                    default: return 'bg-secondary';
+                }
+            }
+        }
+
+        // Location Service
+        class LocationService {
+            static async getCurrentLocation() {
+                return new Promise((resolve, reject) => {
+                    if (!navigator.geolocation) {
+                        reject("Geolocation is not supported by your browser");
+                        return;
+                    }
+
+                    navigator.geolocation.getCurrentPosition(
+                        position => resolve(position.coords),
+                        error => {
+                            let message = "Could not get your location";
+                            switch (error.code) {
+                                case error.PERMISSION_DENIED:
+                                    message = "Location access was denied. Please enable it in your browser settings.";
+                                    break;
+                                case error.POSITION_UNAVAILABLE:
+                                    message = "Location information is unavailable.";
+                                    break;
+                                case error.TIMEOUT:
+                                    message = "The request to get location timed out.";
+                                    break;
+                            }
+                            reject(message);
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        }
+                    );
+                });
+            }
+
+            static async reverseGeocode(lat, lng) {
+                return new Promise((resolve, reject) => {
+                    if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+                        reject("Google Maps API not loaded");
+                        return;
+                    }
+
+                    const geocoder = new google.maps.Geocoder();
+                    const latlng = { lat, lng };
+
+                    geocoder.geocode({ location: latlng }, (results, status) => {
+                        if (status === "OK" && results[0]) {
+                            // Try to get locality or district name
+                            let locationName = "";
+                            for (let component of results[0].address_components) {
+                                if (component.types.includes("locality")) {
+                                    locationName = component.long_name;
+                                    break;
+                                }
+                                if (component.types.includes("administrative_area_level_2")) {
+                                    locationName = component.long_name;
+                                    break;
+                                }
+                            }
+                            resolve(locationName || results[0].formatted_address);
+                        } else {
+                            reject(`Reverse geocoding failed: ${status}`);
+                        }
+                    });
+                });
+            }
+
+            static calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371; // Earth radius in km
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a =
+                    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                return R * c;
+            }
+        }
+
+        // Main Application
+        class FarmAIApp {
+            constructor() {
+                this.mapService = new MapService("mandi-map");
+                this.init();
+            }
+
+            init() {
+                // Initialize map
+                if (this.mapService.initMap({ lat: 20.5937, lng: 78.9629 }, 5)) {
+                    this.loadMandis();
+                }
+
+                // Initialize demand forecast
+                UIService.renderDemandChart("demand-chart");
+                UIService.renderTopCrops(MarketDataService.getTopCrops(), "demand-list");
+
+                // Set up event listeners
+                document.getElementById("fetch-prices-btn").addEventListener("click", () => this.fetchPrices());
+                document.getElementById("location-button").addEventListener("click", () => this.getUserLocation());
+                document.getElementById("search-mandi-btn").addEventListener("click", () => this.searchMandis());
+                document.getElementById("mandi-search").addEventListener("keypress", (e) => {
+                    if (e.key === "Enter") this.searchMandis();
+                });
+            }
+
+            async fetchPrices() {
+                const crop = document.getElementById("crop-select").value;
+                const location = document.getElementById("location-input").value;
+
+                if (!crop || !location) {
+                    UIService.showError("price-results", "Please select both crop and location");
+                    return;
+                }
+
+                UIService.showLoading("price-results", `Fetching prices for ${crop} in ${location}...`);
+
+                try {
+                    const prices = await MarketDataService.fetchPrices(crop, location);
+                    UIService.renderPriceTable(prices, "price-results");
+                } catch (error) {
+                    UIService.showError("price-results", `Failed to fetch prices: ${error.message}`);
+                }
+            }
+
+            async getUserLocation() {
+                const locationInput = document.getElementById("location-input");
+                locationInput.value = "Detecting your location...";
+
+                try {
+                    const coords = await LocationService.getCurrentLocation();
+                    const locationName = await LocationService.reverseGeocode(coords.latitude, coords.longitude);
+                    locationInput.value = locationName || "Your Location";
+
+                    // Show nearby mandis
+                    const allMandis = MandiDataService.getMandis();
+                    const nearbyMandis = allMandis.filter(mandi =>
+                        LocationService.calculateDistance(
+                            coords.latitude,
+                            coords.longitude,
+                            mandi.lat,
+                            mandi.lng
+                        ) < 50
+                    );
+
+                    this.displayMandis(nearbyMandis);
+                } catch (error) {
+                    console.error("Location error:", error);
+                    locationInput.value = "";
+                    alert(error);
+                }
+            }
+
+            async searchMandis() {
+                const query = document.getElementById("mandi-search").value.trim();
+                const searchButton = document.getElementById("search-mandi-btn");
+
+                try {
+                    searchButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching';
+                    const mandis = await MandiDataService.searchMandis(query);
+                    this.displayMandis(mandis);
+
+                    if (mandis.length && query) {
+                        // Center map on first result
+                        this.mapService.centerOnLocation(mandis[0].lat, mandis[0].lng, 10);
+                    }
+                } catch (error) {
+                    console.error("Search error:", error);
+                    UIService.showError("mandi-list", "Error searching for mandis");
+                } finally {
+                    searchButton.innerHTML = '<i class="fas fa-search"></i> Search';
+                }
+            }
+
+            async loadMandis() {
+                const mandis = MandiDataService.getMandis();
+                this.displayMandis(mandis);
+            }
+
+            displayMandis(mandis) {
+                // Update map markers
+                this.mapService.clearMarkers();
+                mandis.forEach(mandi => {
+                    const marker = this.mapService.addMarker(
+                        { lat: mandi.lat, lng: mandi.lng },
+                        mandi.name,
+                        "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                    );
+
+                    if (marker) {
+                        this.mapService.addInfoWindow(marker, `
+                            <div style="padding: 10px">
+                                <h5 style="margin: 0 0 5px 0">${mandi.name}</h5>
+                                <p style="margin: 0">Distance: ${mandi.distance}</p>
+                                <p style="margin: 0">Contact: ${mandi.contact}</p>
+                                <p style="margin: 5px 0 0 0">
+                                    <small>Crops: ${mandi.crops.join(', ')}</small>
+                                </p>
+                            </div>
+                        `);
+                    }
+                });
+
+                // Adjust map view
+                this.mapService.fitBounds(mandis);
+
+                // Update mandi list
+                UIService.renderMandiList(mandis, "mandi-list");
+            }
+        }
+
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new FarmAIApp();
+        });
+    </script>
+
+    <script>
+        // Updated Location Service with distance calculation
+        class LocationService {
+            static async getCurrentLocation() {
+                return new Promise((resolve, reject) => {
+                    if (!navigator.geolocation) {
+                        reject("Geolocation is not supported by your browser");
+                        return;
+                    }
+
+                    navigator.geolocation.getCurrentPosition(
+                        position => resolve({
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude,
+                            accuracy: position.coords.accuracy
+                        }),
+                        error => {
+                            let message = "Could not get your location";
+                            switch (error.code) {
+                                case error.PERMISSION_DENIED:
+                                    message = "Location access was denied. Please enable it in your browser settings.";
+                                    break;
+                                case error.POSITION_UNAVAILABLE:
+                                    message = "Location information is unavailable.";
+                                    break;
+                                case error.TIMEOUT:
+                                    message = "The request to get location timed out.";
+                                    break;
+                            }
+                            reject(message);
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        }
+                    );
+                });
+            }
+
+            static calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371; // Earth radius in km
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a =
+                    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                return R * c;
+            }
+        }
+
+        // Updated Mandi Data Service with distance calculation
+        class MandiDataService {
+            static async getMandisNearby(userLat, userLng) {
+                const allMandis = this.getStaticMandis();
+                return allMandis.map(mandi => {
+                    const distance = LocationService.calculateDistance(
+                        userLat,
+                        userLng,
+                        mandi.lat,
+                        mandi.lng
+                    );
+                    return {
+                        ...mandi,
+                        distance: `${Math.round(distance)}km`,
+                        distanceValue: distance // For sorting
+                    };
+                }).sort((a, b) => a.distanceValue - b.distanceValue);
+            }
+
+            static getStaticMandis() {
+                return [
+                    // Mumbai mandis
+                    { name: "Mumbai APMC Market (Vashi)", lat: 19.0760, lng: 72.9988, contact: "022-27651718", crops: ["Vegetables", "Fruits", "Onion"] },
+                    { name: "Mumbai Flower Market (Dadur)", lat: 19.0216, lng: 72.8424, contact: "022-24131111", crops: ["Flowers"] },
+
+                    // Pune mandis
+                    { name: "Pune Market Yard", lat: 18.5074, lng: 73.8477, contact: "020-24262621", crops: ["Vegetables", "Fruits", "Grains"] },
+
+                    // Nashik mandis
+                    { name: "Nashik APMC Market", lat: 20.0059, lng: 73.7793, contact: "0253-2573091", crops: ["Onion", "Vegetables"] },
+
+                    // Mahapatra's mandis
+                    { name: "Mahapatra Grains (Pune)", lat: 18.5204, lng: 73.8567, contact: "020-98765432", crops: ["Wheat", "Rice"] },
+                    { name: "Mahapatra Vegetables (Nashik)", lat: 19.9975, lng: 73.7898, contact: "0253-9876543", crops: ["Tomato", "Onion"] }
+                ];
+            }
+        }
+
+        // Updated UI Service to show distance properly
+        class UIService {
+            static renderMandiList(mandis, elementId) {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+
+                if (!mandis.length) {
+                    element.innerHTML = `
+                    <div class="alert alert-info">
+                        No mandis found matching your criteria
+                    </div>
+                `;
+                    return;
+                }
+
+                element.innerHTML = mandis.map(mandi => `
+                <div class="mandi-item p-3 rounded">
+                    <div class="d-flex justify-content-between">
+                        <h5 class="mb-1">${mandi.name}</h5>
+                        <span class="badge bg-primary">${mandi.distance}</span>
+                    </div>
+                    <p class="mb-1"><i class="fas fa-phone-alt me-2"></i>${mandi.contact}</p>
+                    <p class="mb-0"><i class="fas fa-seedling me-2"></i>${mandi.crops.join(', ')}</p>
+                </div>
+            `).join('');
+
+                // Add click handlers
+                document.querySelectorAll('.mandi-item').forEach((item, index) => {
+                    item.addEventListener('click', () => {
+                        const mandi = mandis[index];
+                        mapService.centerOnLocation(mandi.lat, mandi.lng, 14);
+                    });
+                });
+            }
+        }
+
+        // Updated FarmAI App to use location-based sorting
+        class FarmAIApp {
+            constructor() {
+                this.mapService = new MapService("mandi-map");
+                this.userLocation = null;
+                this.init();
+            }
+
+            async init() {
+                // Initialize map centered on Maharashtra
+                if (this.mapService.initMap({ lat: 19.7515, lng: 75.7139 }, 7)) {
+                    await this.loadMandis();
+                }
+
+                // Set up event listeners
+                document.getElementById("location-button").addEventListener("click", () => this.updateUserLocation());
+            }
+
+            async updateUserLocation() {
+                const locationInput = document.getElementById("location-input");
+                locationInput.value = "Detecting your location...";
+
+                try {
+                    this.userLocation = await LocationService.getCurrentLocation();
+                    const locationName = await this.reverseGeocode(this.userLocation.lat, this.userLocation.lng);
+                    locationInput.value = locationName || "Your Location";
+                    await this.loadMandis();
+                } catch (error) {
+                    console.error("Location error:", error);
+                    locationInput.value = "";
+                    alert(error);
+                }
+            }
+
+            async loadMandis() {
+                if (!this.userLocation) {
+                    // Default to Mumbai coordinates if location not available
+                    this.userLocation = { lat: 19.0760, lng: 72.9988 };
+                }
+
+                const mandis = await MandiDataService.getMandisNearby(
+                    this.userLocation.lat,
+                    this.userLocation.lng
+                );
+                this.displayMandis(mandis);
+            }
+
+            displayMandis(mandis) {
+                // Update map markers
+                this.mapService.clearMarkers();
+                mandis.forEach(mandi => {
+                    const marker = this.mapService.addMarker(
+                        { lat: mandi.lat, lng: mandi.lng },
+                        mandi.name,
+                        "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                    );
+
+                    if (marker) {
+                        this.mapService.addInfoWindow(marker, `
+                        <div style="padding: 10px">
+                            <h5 style="margin: 0 0 5px 0">${mandi.name}</h5>
+                            <p style="margin: 0">Distance: ${mandi.distance}</p>
+                            <p style="margin: 0">Contact: ${mandi.contact}</p>
+                            <p style="margin: 5px 0 0 0">
+                                <small>Crops: ${mandi.crops.join(', ')}</small>
+                            </p>
+                        </div>
+                    `);
+                    }
+                });
+
+                // Adjust map view
+                this.mapService.fitBounds(mandis);
+
+                // Update mandi list
+                UIService.renderMandiList(mandis, "mandi-list");
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            new FarmAIApp();
+        });
+    </script>
+
+
+</body>
+
+</html>
